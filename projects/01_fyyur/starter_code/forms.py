@@ -1,7 +1,23 @@
 from datetime import datetime
 from flask_wtf import Form
-from wtforms import StringField, SelectField, SelectMultipleField, DateTimeField, BooleanField
+from wtforms import StringField, SelectField, SelectMultipleField, DateTimeField, BooleanField, validators
 from wtforms.validators import DataRequired, AnyOf, URL
+from wtforms_alchemy import PhoneNumberField
+
+
+
+def length(min=-1, max=-1):
+    message = 'Must be between %d and %d characters long.' % (min, max)
+
+    def _length(form, field):
+        string= field.data[1:-1].split(',')
+        l = string and len(string) or 0
+        if l < min or max != -1 and l > max:
+            raise ValidationError(message)
+
+    return _length
+
+
 
 class ShowForm(Form):
     artist_id = StringField(
@@ -82,15 +98,15 @@ class VenueForm(Form):
     address = StringField(
         'address', validators=[DataRequired()]
     )
-    phone = StringField(
-        'phone'
+    phone = PhoneNumberField(
+        'phone', country_coude='NY',
+        display_format='national'
     )
     image_link = StringField(
         'image_link'
     )
     genres = SelectMultipleField(
-        # TODO implement enum restriction
-        'genres', validators=[DataRequired()],
+        'genres',[ validators.length(max=3)],
         choices=[
             ('Alternative', 'Alternative'),
             ('Blues', 'Blues'),
@@ -194,8 +210,7 @@ class ArtistForm(Form):
         'image_link'
     )
     genres = SelectMultipleField(
-        # TODO implement enum restriction
-        'genres', validators=[DataRequired()],
+        'genres', [validators.length(max=3)],
         choices=[
             ('Alternative', 'Alternative'),
             ('Blues', 'Blues'),
@@ -219,7 +234,6 @@ class ArtistForm(Form):
         ]
     )
     facebook_link = StringField(
-        # TODO implement enum restriction
         'facebook_link', validators=[URL()]
     )
     seeking_venue = SelectField('seeking_venue',
@@ -228,6 +242,5 @@ class ArtistForm(Form):
     seeking_description = StringField(
         'seeking_description'
     )
-# TODO IMPLEMENT NEW ARTIST FORM AND NEW SHOW FORM
 
 
