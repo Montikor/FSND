@@ -140,6 +140,7 @@ def venues():
     areas = Venue.query.distinct('city', 'state').all()
 
     data = []
+    #sort the Venues by city and state
     for area in areas:
         venues = Venue.query.filter(
             Venue.city == area.city, Venue.state == area.state).all()
@@ -155,8 +156,6 @@ def venues():
 
 @app.route('/venues/search', methods=['POST'])
 def search_venues():
-    # seach for Hop should return "The Musical Hop".
-    # search for "Music" should return "The Musical Hop" and "Park Square Live Music & Coffee"
 
     search_str = request.form.get('search_term')
     venue_query = Venue.query.filter(Venue.name.ilike('%{}%'.format(search_str))).all()
@@ -248,6 +247,9 @@ def show_venue(venue_id):
         "past_shows_count": 1,
         "upcoming_shows_count": 1,
     }
+    #with Show.query.join(Artist/Venue) got an error that row.Artist/Venue.name does not exit in row
+    # so I went with this one
+
     result = db.session.query(Show.artist_id, Show.start_time, Artist.name, Artist.image_link).filter(Show.artist_id==venue_id, Show.venue_id==Artist.id)
     past_shows = []  
     upcoming_shows = []
@@ -267,6 +269,8 @@ def show_venue(venue_id):
             "artist_image_link": row[3]
             })
     venue=Venue.query.get(venue_id)
+
+    #convert the string type form genres into a list
     genres = venue.genres[1:-1].split(',')
     return render_template(
         'pages/show_venue.html',
@@ -303,7 +307,7 @@ def create_venue_submission():
         )
         db.session.add(new_venue)
         db.session.commit()
-    # on successful db insert, flash success
+         # on successful db insert, flash success
         flash('Venue ' + request.form['name'] + ' was successfully listed!')
     except:
         error=True
@@ -452,6 +456,9 @@ def show_artist(artist_id):
         "past_shows_count": 0,
         "upcoming_shows_count": 3,
     }
+    #with Show.query.join(Artist/Venue) got an error that row.Artist/Venue.name does not exit in row
+    # so I went with this one
+
     result = db.session.query(Show.venue_id, Show.start_time, Venue.name, Venue.image_link).filter(Show.artist_id==artist_id, Show.venue_id==Venue.id)
     past_shows = []  
     upcoming_shows = []
@@ -471,6 +478,8 @@ def show_artist(artist_id):
             "venue_image_link": row[3]
             })
     artist=Artist.query.get(artist_id)
+
+    #convert the string of genres into a list
     genres = artist.genres[1:-1].split(',')
     return render_template(
         'pages/show_artist.html', 
@@ -605,19 +614,18 @@ def create_artist_submission():
 
 @app.route('/shows')
 def shows():
-    # displays list of shows at /shows
-    #       num_shows should be aggregated based on number of upcoming shows per venue.
-    nams = db.session.query(Venue.name, Artist.name, Show.start_time, Artist.image_link).filter(Venue.id==Show.venue_id,Artist.id==Show.artist_id)  
+    # here the same issue cannot access some of the results by e.g venue.name so I conveterd it into a list
+    results = db.session.query(Venue.name, Artist.name, Show.start_time, Artist.image_link).filter(Venue.id==Show.venue_id,Artist.id==Show.artist_id)  
     data=[]
-    for name in nams:
-        starter_time = str(name.start_time)
+    for row in results:
+        starter_time = str(row.start_time)
         show = {
-            "venue_name" : name[0],
+            "venue_name" : row[0],
             "venue_id" :  Show.venue_id,
-            "artist_name" : name.name,
+            "artist_name" : row.name,
             "artist_id" : Show.artist_id,
             "start_time" : starter_time,
-            "artist_image_link" : name[3]
+            "artist_image_link" : row[3]
         }
         data.append(show)
     return render_template('pages/shows.html', shows=data)
